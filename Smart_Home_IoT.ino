@@ -235,13 +235,6 @@ http.end();
 }
 
 
-
-
-
-
-
-
-
 // =============================
 // SENSOR LOGIC
 // =============================
@@ -329,179 +322,58 @@ http.end();
 
 }
 
-
-
-
-
-
-
-
 // =============================
 // UPDATE RELAY DATABASE
 // =============================
 
-void updateRelayDatabase()
-
-{
-
-
+void updateRelayDatabase(){
 HTTPClient http;
-
-
-http.begin(
-updateRelayURL
-);
-
-
-
-http.addHeader(
-"Content-Type",
-"application/x-www-form-urlencoded"
-);
-
-
-
+http.begin(updateRelayURL);
+http.addHeader("Content-Type","application/x-www-form-urlencoded");
 
 String data =
-
 String("device_id=ESP32_01")
-
 +
-
 "&actuator_status="
-
 +
-
-String(
-relayState ? "ON":"OFF"
-);
-
-
-
-
+String(relayState ? "ON":"OFF");
 int response =
 http.POST(data);
-
-
-
-Serial.print(
-"RELAY UPDATE:"
-);
-
-
+Serial.print("RELAY UPDATE:");
 Serial.println(response);
-
-
-
 http.end();
-
-
 }
-
-
-
-
-
-
-
-
 
 // =============================
 // SEND SENSOR DATA
 // =============================
 
-void sendData()
-
-{
-
-
+void sendData(){
 HTTPClient http;
+http.begin(insertURL);
+http.addHeader("Content-Type","application/x-www-form-urlencoded");
 
-
-http.begin(
-insertURL
-);
-
-
-
-http.addHeader(
-"Content-Type",
-"application/x-www-form-urlencoded"
-);
-
-
-
-String data =
-
-String("device_id=ESP32_01");
-
-
-
+String data =String("device_id=ESP32_01");
 data += "&temperature=";
-
 data += String(temperature);
-
-
-
 data += "&humidity=";
-
 data += String(humidity);
-
-
-
 data += "&gas_level=";
-
 data += String(gas);
-
-
-
 data += "&light_level=";
-
 data += String(light);
-
-
-
 data += "&light_status=";
-
 data += lightState;
-
-
-
 data += "&status=";
-
 data += status;
 
-
-
-
-
-
-int response =
-http.POST(data);
-
-
-
-Serial.print(
-"PHP:"
-);
-
+int response = http.POST(data);
+  
+Serial.print("PHP:");
 
 Serial.println(response);
-
-
-
 http.end();
-
-
 }
-
-
-
-
-
-
-
-
 
 // =============================
 // LOOP
@@ -509,9 +381,7 @@ http.end();
 
 
 void loop()
-
 {
-
 
 // GET DATABASE SETTINGS
 
@@ -519,9 +389,7 @@ void loop()
 if(
 millis()-lastSettingsCheck >= settingsInterval
 )
-
 {
-
 
 lastSettingsCheck = millis();
 getSettings();
