@@ -1,0 +1,572 @@
+<?php require_once "auth_check.php"; ?>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+<title>Smart Home Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Arial, sans-serif; }
+
+body { background: #f0f4f8; }
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  color: white;
+  padding: 0 30px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.header-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.header-title { font-size: 20px; font-weight: 700; letter-spacing: 0.2px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-badge {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+}
+.header-badge.connected { color: #4ade80; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+
+/* ── Nav ── */
+.nav {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 30px;
+  display: flex;
+  gap: 0;
+}
+.nav a {
+  text-decoration: none;
+  padding: 16px 24px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 3px solid transparent;
+  transition: color 0.2s;
+}
+.nav a.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+.nav a:hover { color: #2563eb; }
+
+/* ── Sensor Cards ── */
+.container {
+  padding: 28px 28px 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1100px) { .container { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px)  { .container { grid-template-columns: repeat(2, 1fr); } }
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 20px 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  position: relative;
+  overflow: hidden;
+}
+.card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.card-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.card-icon.blue   { background: #eff6ff; }
+.card-icon.green  { background: #f0fdf4; }
+.card-icon.purple { background: #faf5ff; }
+.card-icon.yellow { background: #fffbeb; }
+.card-icon.teal   { background: #f0fdfa; }
+
+.card-label { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.card-value { font-size: 30px; font-weight: 700; color: #1e3a8a; line-height: 1.1; margin-bottom: 10px; }
+.card-value.good  { color: #16a34a; }
+.card-value.bad   { color: #dc2626; }
+.sparkline-wrap { height: 36px; }
+.sparkline-wrap canvas { width: 100% !important; height: 36px !important; }
+
+/* ── Panels ── */
+.panel {
+  background: white;
+  margin: 20px 28px 0;
+  padding: 24px 28px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.panel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.panel-header-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #eff6ff; display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.panel-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+
+/* Relay */
+.relay-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.relay-left {}
+.relay-buttons { display: flex; gap: 12px; margin-bottom: 14px; }
+.relay-buttons button {
+  padding: 11px 28px; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; transition: opacity 0.2s;
+}
+.relay-buttons button:hover { opacity: 0.88; }
+.btn-on  { background: #22c55e; color: white; }
+.btn-off { background: #ef4444; color: white; }
+.relay-status-label { font-size: 15px; font-weight: 600; color: #334155; }
+.relay-status-label span { color: #1e3a8a; }
+
+.relay-device {
+  width: 130px; height: 100px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+.relay-device-dots { display: flex; gap: 8px; }
+.relay-device-dot { width: 10px; height: 10px; border-radius: 50%; background: #bfdbfe; border: 2px solid #93c5fd; }
+.relay-device-icon { font-size: 28px; color: #2563eb; }
+.relay-device-pins { display: flex; gap: 8px; }
+.relay-device-pin { width: 10px; height: 10px; border-radius: 50%; background: #bfdbfe; border: 2px solid #93c5fd; }
+
+/* Charts */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.chart-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+.chart-box canvas { height: 220px !important; }
+
+/* ── Insights Panel ── */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-bottom: 4px;
+}
+.insight-card {
+  border-radius: 14px;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.insight-card.red    { background: #fff1f2; border: 1px solid #fecdd3; }
+.insight-card.yellow { background: #fffbeb; border: 1px solid #fde68a; }
+.insight-card.blue   { background: #eff6ff; border: 1px solid #bfdbfe; }
+
+.insight-top { display: flex; align-items: center; gap: 10px; }
+.insight-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.insight-card.red    .insight-icon { background: #fee2e2; }
+.insight-card.yellow .insight-icon { background: #fef3c7; }
+.insight-card.blue   .insight-icon { background: #dbeafe; }
+
+.insight-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+.insight-subtitle { font-size: 12px; color: #64748b; margin-top: 1px; }
+
+.insight-value { font-size: 34px; font-weight: 800; line-height: 1; }
+.insight-card.red    .insight-value { color: #dc2626; }
+.insight-card.yellow .insight-value { color: #d97706; }
+.insight-card.blue   .insight-value { color: #2563eb; }
+
+.insight-footer { font-size: 12px; color: #64748b; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px; }
+
+.rec-list { display: flex; flex-direction: column; gap: 8px; }
+.rec-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: white; border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px; color: #334155;
+  border: 1px solid #e2e8f0;
+}
+.rec-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.rec-dot.red    { background: #ef4444; }
+.rec-dot.yellow { background: #f59e0b; }
+.rec-dot.blue   { background: #3b82f6; }
+.insight-card.yellow .progress-row { display:flex; flex-direction:column; gap:8px; }
+.progress-label { display:flex; justify-content:space-between; font-size:13px; font-weight:600; color:#334155; }
+.progress-track { background:#e2e8f0; border-radius:99px; height:10px; overflow:hidden; }
+.progress-fill-bright { background:#f59e0b; border-radius:99px; height:100%; transition:width 0.6s ease; }
+.progress-fill-dark   { background:#94a3b8; border-radius:99px; height:100%; transition:width 0.6s ease; }
+.spacer-bottom { height: 28px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🏠</div>
+    <span class="header-title">Smart Home IoT Monitoring Dashboard</span>
+  </div>
+    <div class="header-right">
+    <div class="header-badge">🕐 <span id="clock">--:-- --</span></div>
+    <div class="header-badge connected"><div class="dot"></div> Connected</div>
+    <div class="header-badge">👤 <?php echo htmlspecialchars($_SESSION['full_name']); ?></div>
+    <div class="header-badge">📡 <?php echo htmlspecialchars($_SESSION['device_id']); ?></div>
+    <a href="logout.php" style="text-decoration:none;display:flex;align-items:center;gap:7px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:5px 14px;font-size:13px;color:#fca5a5;">🚪 Logout</a>
+  </div>
+</div>
+
+<!-- Nav -->
+<div class="nav">
+  <a href="index.php" class="active">⊞ Dashboard</a>
+  <a href="history_dash.php">🕐 History</a>
+  <a href="settings.php">⚙ Settings</a>
+</div>
+
+<!-- Sensor Cards -->
+<div class="container">
+
+  <div class="card">
+    <div class="card-top">
+      <div class="card-icon blue">🌡</div>
+      <span class="card-label">Temperature</span>
+    </div>
+    <div id="temperature" class="card-value">--</div>
+    <div class="sparkline-wrap"><canvas id="sparkTemp"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <div class="card-icon green">💧</div>
+      <span class="card-label">Humidity</span>
+    </div>
+    <div id="humidity" class="card-value">--</div>
+    <div class="sparkline-wrap"><canvas id="sparkHum"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <div class="card-icon purple">🔥</div>
+      <span class="card-label">Gas</span>
+    </div>
+    <div id="gas" class="card-value">--</div>
+    <div class="sparkline-wrap"><canvas id="sparkGas"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <div class="card-icon yellow">💡</div>
+      <span class="card-label">Light</span>
+    </div>
+    <div id="light" class="card-value">--</div>
+    <div class="sparkline-wrap"><canvas id="sparkLight"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-top">
+      <div class="card-icon teal">🛡</div>
+      <span class="card-label">Status</span>
+    </div>
+    <div id="status" class="card-value">--</div>
+    <div class="sparkline-wrap"><canvas id="sparkStatus"></canvas></div>
+  </div>
+
+</div>
+
+<!-- Relay Panel -->
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-header-icon">⚡</div>
+    <span class="panel-title">Relay Control</span>
+  </div>
+  <div class="relay-inner">
+    <div class="relay-left">
+      <div class="relay-buttons">
+        <button class="btn-on" onclick="relay('ON')">⏻ TURN ON</button>
+        <button class="btn-off" onclick="relay('OFF')">⏻ TURN OFF</button>
+      </div>
+      <div id="relayStatus" class="relay-status-label">Relay: --</div>
+    </div>
+    <div class="relay-device">
+      <div class="relay-device-dots">
+        <div class="relay-device-dot"></div><div class="relay-device-dot"></div>
+        <div class="relay-device-dot"></div><div class="relay-device-dot"></div>
+      </div>
+      <div class="relay-device-icon">⚡</div>
+      <div class="relay-device-pins">
+        <div class="relay-device-pin"></div><div class="relay-device-pin"></div>
+        <div class="relay-device-pin"></div><div class="relay-device-pin"></div>
+        <div class="relay-device-pin"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Panel -->
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-header-icon">📈</div>
+    <span class="panel-title">Live Sensor Analytics</span>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-box"><canvas id="tempChart"></canvas></div>
+    <div class="chart-box"><canvas id="humChart"></canvas></div>
+    <div class="chart-box"><canvas id="gasChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Insights Panel -->
+<div class="panel" style="margin-bottom:0">
+  <div class="panel-header">
+    <div class="panel-header-icon">💡</div>
+    <span class="panel-title">Smart Insights & Recommendations</span>
+  </div>
+
+  <div class="insights-grid">
+
+    <!-- Poor Air Quality Events -->
+    <div class="insight-card red">
+      <div class="insight-top">
+        <div class="insight-icon">🌫️</div>
+        <div>
+          <div class="insight-title">Poor Air Quality Events</div>
+          <div class="insight-subtitle">High gas readings today</div>
+        </div>
+      </div>
+      <div id="insightGasCount" class="insight-value">0</div>
+      <div class="insight-footer" id="insightGasMsg">No poor air quality events detected yet.</div>
+    </div>
+
+    <!-- Light Usage Pattern -->
+    <div class="insight-card yellow">
+      <div class="insight-top">
+        <div class="insight-icon">💡</div>
+        <div>
+          <div class="insight-title">Lighting Analysis</div>
+          <div class="insight-subtitle">Today's bright vs dark readings</div>
+        </div>
+      </div>
+      <div class="progress-row">
+        <div>
+          <div class="progress-label">
+            <span>☀️ BRIGHT</span>
+            <span id="insightLightBrightPct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill-bright" id="insightLightBrightBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="progress-label">
+            <span>🌑 DARK</span>
+            <span id="insightLightDarkPct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill-dark" id="insightLightDarkBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="insight-footer" id="insightLightMsg">Waiting for light data...</div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="insight-card blue">
+      <div class="insight-top">
+        <div class="insight-icon">🔔</div>
+        <div>
+          <div class="insight-title">Recommendations</div>
+          <div class="insight-subtitle">Ventilation &amp; lighting tips</div>
+        </div>
+      </div>
+      <div class="rec-list" id="recList">
+        <div class="rec-item"><div class="rec-dot blue"></div>Waiting for sensor data...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="spacer-bottom"></div>
+
+<script>
+// Clock
+function updateClock(){
+  const now=new Date();
+  let h=now.getHours(), m=now.getMinutes().toString().padStart(2,'0');
+  const ampm=h>=12?'PM':'AM'; h=h%12||12;
+  document.getElementById('clock').textContent=h+':'+m+' '+ampm;
+}
+updateClock(); setInterval(updateClock,1000);
+
+// Sparkline helper
+function makeSparkline(id, color){
+  return new Chart(document.getElementById(id),{
+    type:'line',
+    data:{ labels:[], datasets:[{ data:[], borderColor:color, borderWidth:1.5,
+      pointRadius:2, pointBackgroundColor:color, tension:0.4,
+      fill:false }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{enabled:false} },
+      scales:{ x:{display:false}, y:{display:false} },
+      animation:{duration:300} }
+  });
+}
+
+const sparkTemp   = makeSparkline('sparkTemp',   '#3b82f6');
+const sparkHum    = makeSparkline('sparkHum',    '#22c55e');
+const sparkGas    = makeSparkline('sparkGas',    '#a855f7');
+const sparkLight  = makeSparkline('sparkLight',  '#eab308');
+const sparkStatus = makeSparkline('sparkStatus', '#14b8a6');
+
+function pushSpark(chart, val){
+  if(chart.data.labels.length>=20){ chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+  chart.data.labels.push(''); chart.data.datasets[0].data.push(val);
+  chart.update();
+}
+
+// Main charts
+let labels=[], tempData=[], humData=[], gasData=[];
+
+function chartCfg(id, label, data, color){
+  return new Chart(document.getElementById(id),{
+    type:'line',
+    data:{ labels, datasets:[{ label, data, borderColor:color,
+      backgroundColor:color+'22', borderWidth:2, tension:0.4,
+      pointRadius:3, fill:true }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:true, labels:{boxWidth:14, font:{size:12}}},
+        tooltip:{ callbacks:{ label:c=>c.dataset.label+': '+c.raw } } },
+      scales:{ x:{ ticks:{maxTicksLimit:6, font:{size:10}}, grid:{color:'#f1f5f9'} },
+               y:{ ticks:{font:{size:10}}, grid:{color:'#f1f5f9'} } } }
+  });
+}
+
+const tempChart = chartCfg('tempChart','Temperature °C', tempData,'#3b82f6');
+const humChart  = chartCfg('humChart', 'Humidity',       humData, '#22c55e');
+const gasChart  = chartCfg('gasChart', 'Gas Level',      gasData, '#a855f7');
+
+// Load data
+function loadData(){
+  fetch("get_data.php?t="+Date.now())
+    .then(r=>r.json())
+    .then(data=>{
+      document.getElementById('temperature').innerHTML = data.temperature+' °C';
+      document.getElementById('humidity').innerHTML    = data.humidity;
+      document.getElementById('gas').innerHTML         = data.gas_level;
+      document.getElementById('light').innerHTML       = data.light_status;
+
+      const s = document.getElementById('status');
+      s.innerHTML = data.status;
+      s.className = 'card-value '+(data.status=='NOT IDEAL'?'bad':'good');
+
+      const t = new Date().toLocaleTimeString();
+      labels.push(t); tempData.push(Number(data.temperature));
+      humData.push(Number(data.humidity)); gasData.push(Number(data.gas_level));
+      if(labels.length>20){ labels.shift(); tempData.shift(); humData.shift(); gasData.shift(); }
+      tempChart.update(); humChart.update(); gasChart.update();
+
+      pushSpark(sparkTemp,   Number(data.temperature));
+      pushSpark(sparkHum,    Number(data.humidity));
+      pushSpark(sparkGas,    Number(data.gas_level));
+      pushSpark(sparkLight,  data.light_status=='BRIGHT'?1:0);
+      pushSpark(sparkStatus, data.status=='IDEAL'?1:0);
+
+      // ── Insights ──
+      // 1. Poor air quality — fetched from DB (see loadGasEvents)
+      // 2. Light usage pattern — fetched from DB (see loadLightPattern)
+
+      // 3. Recommendations
+      const gasVal = Number(data.gas_level);
+      const isLight = data.light_status === 'BRIGHT';
+      const recs = [];
+      if(gasVal > gasThreshold)
+        recs.push({dot:'red',   text:'High gas detected — open windows or turn on exhaust fan.'});
+      if(Number(data.temperature) > tempThreshold)
+        recs.push({dot:'red',   text:'Temperature is high — improve airflow or use cooling.'});
+      if(!isLight)
+        recs.push({dot:'yellow',text:'Room is dim — consider turning on lights for comfort.'});
+      if(Number(data.humidity) > 80)
+        recs.push({dot:'yellow',text:'Humidity is high — run a dehumidifier or open vents.'});
+      if(recs.length === 0)
+        recs.push({dot:'blue',  text:'All conditions are ideal. No action needed.'});
+
+      document.getElementById('recList').innerHTML = recs.map(r=>
+        `<div class="rec-item"><div class="rec-dot ${r.dot}"></div>${r.text}</div>`
+      ).join('');
+    });
+}
+
+function relay(state){
+  let form=new FormData();
+  form.append("device_id","ESP32_01");
+  form.append("actuator_status",state);
+  fetch("update_relay.php",{method:"POST",body:form}).then(()=>getRelay());
+}
+
+function getRelay(){
+  fetch("get_relay.php?device_id=ESP32_01&t="+Date.now())
+    .then(r=>r.text())
+    .then(data=>{
+      relayStatus.innerHTML="Relay: "+data;
+    });
+}
+
+let gasThreshold=400, tempThreshold=30;
+
+function loadGasEvents(){
+  fetch("get_gas_events.php?device_id=ESP32_01&t="+Date.now())
+    .then(r=>r.json())
+    .then(data=>{
+      const count = Number(data.count);
+      gasThreshold  = Number(data.gas_threshold)  || 400;
+      tempThreshold = Number(data.temperature_threshold) || 30;
+
+      document.getElementById('insightGasCount').textContent = count;
+      document.getElementById('insightGasMsg').textContent =
+        count === 0 ? 'No poor air quality events today.' :
+        count < 5   ? 'Mild gas activity today. Monitor closely.' :
+                      '⚠️ Frequent high gas readings today. Ventilate now.';
+    });
+}
+
+function loadLightPattern(){
+  fetch("get_light_pattern.php?t="+Date.now())
+    .then(r=>r.json())
+    .then(data=>{
+      const brightPct = data.percent;
+      const darkPct   = 100 - brightPct;
+      document.getElementById('insightLightBrightPct').textContent = brightPct + '%';
+      document.getElementById('insightLightDarkPct').textContent   = darkPct + '%';
+      document.getElementById('insightLightBrightBar').style.width = brightPct + '%';
+      document.getElementById('insightLightDarkBar').style.width   = darkPct + '%';
+      document.getElementById('insightLightMsg').textContent       = data.pattern;
+    });
+}
+
+loadData(); getRelay(); loadGasEvents(); loadLightPattern();
+setInterval(loadData, 5000);
+setInterval(getRelay, 1000);
+setInterval(loadGasEvents, 5000);
+setInterval(loadLightPattern, 5000);
+</script>
+</body>
+</html>

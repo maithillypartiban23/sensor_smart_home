@@ -7,12 +7,10 @@ $password = "";
 $database = "iot_system";
 
 $conn = new mysqli($host, $user, $password, $database);
-
 if($conn->connect_error){
     echo json_encode(['count'=>0,'gas_threshold'=>400,'temperature_threshold'=>30]);
     exit;
 }
-
 // GET THRESHOLDS - use defaults if no row found
 $gasThreshold  = 400;
 $tempThreshold = 30;

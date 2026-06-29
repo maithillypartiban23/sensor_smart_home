@@ -20,7 +20,6 @@ $endTime = $date . " " . $end . ":59";
 $sql = "
 
 SELECT 
-
 temperature,
 humidity,
 gas_level,
@@ -29,23 +28,12 @@ status,
 created_at
 
 FROM sensor_data
-
-
 WHERE created_at >= '$startTime'
-
 AND created_at <= '$endTime'
-
-
 ORDER BY created_at ASC
-
-
 ";
 
-
-
 $result = $conn->query($sql);
-
-
 
 $data = [];
 
