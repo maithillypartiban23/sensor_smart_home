@@ -46,17 +46,18 @@ Displays the current WiFi connection status and device connectivity information.
 ## Databases
 
 ### sensor_data Table
-Stores real-time sensor readings collected from the ESP32, including sensor values, system status, and timestamps.
-
 <img width="702" height="236" alt="sensor_data table" src="https://github.com/user-attachments/assets/cb1897ba-def5-4106-bec6-81a7292c40f1" />
 
-### users Table
-Stores registered user information used for authentication and account management.
+Stores real-time sensor readings collected from the ESP32, including sensor values, system status, and timestamps.
 
+
+### users Table
 <img width="727" height="113" alt="users table" src="https://github.com/user-attachments/assets/07cfb4c0-1e68-4976-aa1b-087ebc1c9e0a" />
 
-### device_settings Table
-Stores device configuration settings such as WiFi status and adjustable system parameters.
+Stores registered user information used for authentication and account management.
 
+
+### device_settings Table
 <img width="747" height="121" alt="device_settings table" src="https://github.com/user-attachments/assets/a9c8d314-0844-4745-9ad8-a249dc35dd12" />
 
+Stores device configuration settings such as WiFi status and adjustable system parameters.
