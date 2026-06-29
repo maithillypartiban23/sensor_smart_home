@@ -14,3 +14,13 @@ HISTORY
 
 SETTINGS
 <img width="959" height="493" alt="image" src="https://github.com/user-attachments/assets/f386748a-4852-4c8e-9cca-0dcb55091b3f" />
+
+
+*Wifi Configuration*
+<img width="940" height="424" alt="image" src="https://github.com/user-attachments/assets/8f4da76c-2ffc-42db-b57c-a4cf41669d03" />
+
+
+<img width="940" height="519" alt="image" src="https://github.com/user-attachments/assets/041c6501-52e6-4612-8fb5-a76829e99e37" />
+
+
+<img width="953" height="231" alt="image" src="https://github.com/user-attachments/assets/0a70bbee-0209-4990-86d4-59a93505cab4" />
